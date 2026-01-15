@@ -1,0 +1,225 @@
+# ============================================================================
+# CJSON to Payment API - Mapping & Validation Rules
+# ============================================================================
+# This file defines:
+#   1. Validation rules (required, minLength, maxLength, pattern, min, max)
+#   2. Mapping rules (source -> target field mapping)
+#   3. Output configuration (JSON or XML)
+# ============================================================================
+
+cartridgeId: cjson-to-payment-api
+
+# Output format configuration
+output:
+  type: json        # json or xml
+  root: payment     # Only used for XML output
+
+# ============================================================================
+# VALIDATION RULES
+# ============================================================================
+# Each rule validates a field at a JSONPath location
+#
+# Supported validations:
+#   - required: true/false - Field must exist and be non-blank
+#   - minLength: N         - String length must be >= N
+#   - maxLength: N         - String length must be <= N
+#   - pattern: regex       - String must match the Java regex pattern
+#   - min: N               - Numeric value must be >= N
+#   - max: N               - Numeric value must be <= N
+#   - equals: value        - Field must equal this exact value
+# ============================================================================
+
+validations:
+  # ----------------------------------------------------------------------------
+  # Transaction ID - Unique identifier for the payment
+  # ----------------------------------------------------------------------------
+  - path: $.transactionId
+    required: true
+    minLength: 10
+    maxLength: 50
+    pattern: '^[A-Z0-9\\-]+$'
+    # Example: TXN-2026-01-15-ABC123
+
+  # ----------------------------------------------------------------------------
+  # Payer Information
+  # ----------------------------------------------------------------------------
+  - path: $.payer.accountNumber
+    required: true
+    minLength: 10
+    maxLength: 20
+    pattern: '^[0-9]+$'
+    # Example: 1234567890123456
+
+  - path: $.payer.name
+    required: true
+    minLength: 2
+    maxLength: 100
+    # Example: John Doe
+
+  - path: $.payer.email
+    required: false
+    pattern: '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$'
+    # Example: john.doe@example.com
+
+  # ----------------------------------------------------------------------------
+  # Payee Information
+  # ----------------------------------------------------------------------------
+  - path: $.payee.accountNumber
+    required: true
+    minLength: 10
+    maxLength: 20
+    pattern: '^[0-9]+$'
+
+  - path: $.payee.name
+    required: true
+    minLength: 2
+    maxLength: 100
+
+  - path: $.payee.bankCode
+    required: true
+    minLength: 4
+    maxLength: 11
+    pattern: '^[A-Z0-9]+$'
+    # SWIFT/BIC or routing number
+
+  # ----------------------------------------------------------------------------
+  # Payment Details
+  # ----------------------------------------------------------------------------
+  - path: $.amount
+    required: true
+    min: 0.01
+    max: 1000000.00
+    # Must be positive and within transfer limits
+
+  - path: $.currency
+    required: true
+    minLength: 3
+    maxLength: 3
+    pattern: '^[A-Z]{3}$'
+    # ISO-4217 currency code: USD, EUR, GBP, etc.
+
+  - path: $.paymentType
+    required: true
+    minLength: 3
+    maxLength: 20
+    pattern: '^(WIRE|ACH|INSTANT|INTERNAL)$'
+    # Allowed payment types
+
+  - path: $.reference
+    required: false
+    maxLength: 140
+    # Payment reference/memo (optional)
+
+  # ----------------------------------------------------------------------------
+  # Metadata
+  # ----------------------------------------------------------------------------
+  - path: $.requestedExecutionDate
+    required: false
+    pattern: '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'
+    # ISO date format: YYYY-MM-DD
+
+# ============================================================================
+# MAPPING RULES
+# ============================================================================
+# Maps source fields (JSONPath) to target fields (dot-notation)
+#
+# Options:
+#   - source: JSONPath to input field ($.a.b.c)
+#   - target: Output field path (a.b.c)
+#   - required: true/false - Fail if source is missing
+#   - defaultValue: Value to use if source is missing
+# ============================================================================
+
+mappings:
+  # ----------------------------------------------------------------------------
+  # Core Transaction Fields
+  # ----------------------------------------------------------------------------
+  - source: $.transactionId
+    target: paymentRequest.transactionId
+    required: true
+
+  - source: $.paymentType
+    target: paymentRequest.paymentType
+    required: true
+
+  # ----------------------------------------------------------------------------
+  # Payer (Debtor) Mapping
+  # ----------------------------------------------------------------------------
+  - source: $.payer.accountNumber
+    target: paymentRequest.debtor.accountId
+    required: true
+
+  - source: $.payer.name
+    target: paymentRequest.debtor.name
+    required: true
+
+  - source: $.payer.email
+    target: paymentRequest.debtor.contactEmail
+
+  - source: $.payer.address
+    target: paymentRequest.debtor.address
+
+  # ----------------------------------------------------------------------------
+  # Payee (Creditor) Mapping
+  # ----------------------------------------------------------------------------
+  - source: $.payee.accountNumber
+    target: paymentRequest.creditor.accountId
+    required: true
+
+  - source: $.payee.name
+    target: paymentRequest.creditor.name
+    required: true
+
+  - source: $.payee.bankCode
+    target: paymentRequest.creditor.financialInstitutionId
+    required: true
+
+  - source: $.payee.address
+    target: paymentRequest.creditor.address
+
+  # ----------------------------------------------------------------------------
+  # Amount & Currency
+  # ----------------------------------------------------------------------------
+  - source: $.amount
+    target: paymentRequest.instructedAmount.value
+    required: true
+
+  - source: $.currency
+    target: paymentRequest.instructedAmount.currency
+    required: true
+
+  # ----------------------------------------------------------------------------
+  # Optional Fields with Defaults
+  # ----------------------------------------------------------------------------
+  - source: $.reference
+    target: paymentRequest.remittanceInformation
+    defaultValue: "Payment"
+
+  - source: $.requestedExecutionDate
+    target: paymentRequest.requestedExecutionDate
+
+  - source: $.priority
+    target: paymentRequest.priority
+    defaultValue: "NORMAL"
+
+  # ----------------------------------------------------------------------------
+  # Enriched Fields (populated by enrichment stage)
+  # ----------------------------------------------------------------------------
+  - source: $.channel
+    target: paymentRequest.channel
+
+  - source: $.sourceSystem
+    target: paymentRequest.sourceSystem
+
+  - source: $.processedAt
+    target: paymentRequest.createdTimestamp
+
+  - source: $.correlationId
+    target: paymentRequest.correlationId
+
+  - source: $.riskScore
+    target: paymentRequest.riskAssessment.score
+
+  - source: $.riskLevel
+    target: paymentRequest.riskAssessment.level
+

@@ -1,0 +1,32 @@
+- route:
+    id: cjson-to-rest-route
+    from:
+      uri: "direct:cjson-to-rest"
+      steps:
+        - bean:
+            ref: validate
+            method: process
+        - bean:
+            ref: enrich
+            method: process
+        - bean:
+            ref: transform
+            method: process
+        # We need an actual JSON payload over HTTP
+        - marshal:
+            json: { }
+        - convertBodyTo:
+            type: java.lang.String
+        - setHeader:
+            name: CamelHttpMethod
+            constant: POST
+        - setHeader:
+            name: Content-Type
+            constant: application/json
+        - toD: "{{app.downstream.base-url}}{{app.downstream.path}}?bridgeEndpoint=true"
+        - unmarshal:
+            json: { }
+        - setHeader:
+            name: Content-Type
+            constant: application/json
+

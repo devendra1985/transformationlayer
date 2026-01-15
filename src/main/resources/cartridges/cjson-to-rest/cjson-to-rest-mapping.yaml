@@ -1,0 +1,55 @@
+cartridgeId: cjson-to-rest
+
+validations:
+  - path: $.msgId
+    required: true
+    minLength: 10
+    maxLength: 40
+    # example: MSG-20260113-0001
+    pattern: '^[A-Z0-9\\-]+$'
+
+  - path: $.currency
+    required: true
+    minLength: 3
+    maxLength: 3
+    # ISO-4217, ex: USD, EUR
+    pattern: '^[A-Z]{3}$'
+
+  - path: $.amount
+    required: true
+    min: 0.01
+    max: 1000000
+
+  - path: $.bic
+    required: true
+    minLength: 8
+    maxLength: 11
+    # SWIFT/BIC: 8 or 11 chars
+    pattern: '^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$'
+
+mappings:
+  # example: msgId -> messageId
+  - source: $.msgId
+    target: messageId
+    required: true
+
+  - source: $.currency
+    target: currency
+    required: true
+
+  - source: $.amount
+    target: amount
+    required: true
+
+  - source: $.bic
+    target: bic
+    required: true
+
+  # enriched fields (optional)
+  - source: $.channel
+    target: channel
+  - source: $.sourceSystem
+    target: sourceSystem
+  - source: $.processedAt
+    target: processedAt
+

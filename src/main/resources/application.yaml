@@ -1,0 +1,28 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: transformation-service
+
+camel:
+  springboot:
+    # Load cartridge routes (YAML DSL)
+    routes-include-pattern: classpath*:cartridges/*/*-route.yaml
+
+app:
+  cartridges:
+    base-path: classpath:cartridges
+  downstream:
+    # Configure your real downstream REST API here
+    base-url: http://localhost:8081
+    path: /target
+  # Payment API configuration for cjson-to-payment-api cartridge
+  payment-api:
+    base-url: http://localhost:8082
+    path: /api/v1/payments
+
+logging:
+  level:
+    org.apache.camel: INFO
+

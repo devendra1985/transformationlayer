@@ -1,0 +1,112 @@
+# ============================================================================
+# CJSON to Payment API - Enrichment Rules
+# ============================================================================
+# This file defines enrichment/enhancement rules applied BEFORE transformation.
+#
+# Rule Types:
+#   1. set   - Set a static value (supports ${now}, ${uuid} tokens)
+#   2. copy  - Copy value from one field to another
+#   3. call  - Call a Spring bean method for dynamic enrichment
+#
+# Conditional Execution:
+#   - when.path   - JSONPath to check
+#   - when.equals - Value to match
+#   - when.exists - Check if field exists (true/false)
+# ============================================================================
+
+cartridgeId: cjson-to-payment-api
+
+rules:
+  # ============================================================================
+  # STATIC ENRICHMENTS - Add standard fields
+  # ============================================================================
+
+  # Add channel identifier
+  - set:
+      target: channel
+      value: PAYMENT_GATEWAY
+
+  # Add source system identifier
+  - set:
+      target: sourceSystem
+      value: CJSON_FEED
+
+  # Add processing timestamp (ISO-8601)
+  - set:
+      target: processedAt
+      value: ${now}
+
+  # Generate unique correlation ID for tracing
+  - set:
+      target: correlationId
+      value: ${uuid}
+
+  # ============================================================================
+  # CONDITIONAL ENRICHMENTS - Based on payment type
+  # ============================================================================
+
+  # For WIRE transfers, set high priority
+  - when:
+      path: $.paymentType
+      equals: "WIRE"
+    set:
+      target: priority
+      value: HIGH
+
+  # For INSTANT payments, set urgent priority
+  - when:
+      path: $.paymentType
+      equals: "INSTANT"
+    set:
+      target: priority
+      value: URGENT
+
+  # ============================================================================
+  # DATA NORMALIZATION
+  # ============================================================================
+
+  # Normalize currency to uppercase (handled by EnrichProcessor)
+  # Trim BIC codes (handled by EnrichProcessor)
+
+  # ============================================================================
+  # DYNAMIC ENRICHMENTS - Call Spring beans for business logic
+  # ============================================================================
+
+  # Calculate risk score based on payment details
+  # Calls: paymentEnrichmentFunctions.calculateRiskScore(Map body) -> Map patch
+  - call:
+      bean: paymentEnrichmentFunctions
+      method: calculateRiskScore
+
+  # Lookup and enrich payer details (e.g., from customer database)
+  # Only if payer.customerId exists
+  - when:
+      path: $.payer.customerId
+      exists: true
+    call:
+      bean: paymentEnrichmentFunctions
+      method: enrichPayerDetails
+
+  # ============================================================================
+  # COPY FIELDS - Derive fields from existing data
+  # ============================================================================
+
+  # Copy transaction ID to traceId for downstream logging
+  - copy:
+      source: $.transactionId
+      target: traceId
+
+  # ============================================================================
+  # AMOUNT-BASED ENRICHMENTS
+  # ============================================================================
+
+  # For high-value transactions (>10000), flag for manual review
+  # This is handled by the calculateRiskScore method
+
+  # ============================================================================
+  # CONDITIONAL DEFAULTS
+  # ============================================================================
+
+  # If no execution date provided, it will be set to today by the API
+  # (no action needed here, handled by API default)
+
