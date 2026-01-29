@@ -1,4 +1,4 @@
-## Transformation Layer
+# Transformation Layer
 
 A high-performance CJSON to API transformation service built with **Spring Boot 3.3.6** and **Apache Camel 4.8.2**.
 
