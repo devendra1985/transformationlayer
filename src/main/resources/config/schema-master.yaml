@@ -1,0 +1,6 @@
+# Schema definitions keyed by cartridgeId - lookup only
+cartridges:
+  VISABA:
+    description: "Visa Bank Account Payout"
+    provider: VISA
+    inputFormat: CJSON

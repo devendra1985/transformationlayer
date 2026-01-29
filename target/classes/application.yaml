@@ -7,22 +7,42 @@ spring:
 
 camel:
   springboot:
-    # Load cartridge routes (YAML DSL)
-    routes-include-pattern: classpath*:cartridges/*/*-route.yaml
+    main-run-controller: true
 
 app:
+  config:
+    base-path: classpath:config
   cartridges:
     base-path: classpath:cartridges
-  downstream:
-    # Configure your real downstream REST API here
-    base-url: http://localhost:8081
-    path: /target
-  # Payment API configuration for cjson-to-payment-api cartridge
-  payment-api:
-    base-url: http://localhost:8082
-    path: /api/v1/payments
+  cache:
+    # Pre-warm caches at startup for zero cold-start latency
+    warm-on-startup: true
+  bulk:
+    # 0 or 1 = disabled, >1 enables custom thread pool size
+    parallelism: 0
+  visa:
+    base-url: https://sandbox.api.visa.com
+    path: /visapayouts/v3/payouts
+  persistence:
+    # false = skip DB persistence (no datasource required)
+    enabled: false
+    raw-table: TRANSFORM_RAW
+    transformed-table: TRANSFORM_OUT
 
 logging:
   level:
     org.apache.camel: INFO
+    com.example.transformation: DEBUG
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}

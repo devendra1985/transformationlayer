@@ -1,0 +1,17 @@
+# Defines transformation flow types
+flows:
+  CJSON_TO_API:
+    from: CJSON
+    to: API
+
+  API_TO_CJSON:
+    from: API
+    to: CJSON
+
+  CJSON_TO_XML:
+    from: CJSON
+    to: XML
+
+  XML_TO_CJSON:
+    from: XML
+    to: CJSON

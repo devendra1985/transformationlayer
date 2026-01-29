@@ -1,0 +1,87 @@
+# ============================================================================
+# VISA VISABA USD - Enrichment Rules
+# ============================================================================
+
+cartridgeId: VISABA-USD
+
+rules:
+  # Payout method constant (Visa Direct Account)
+  - set:
+      target: payoutMethod
+      value: "B"
+
+  # Sender/recipient type mapping
+  - when:
+      path: $.recipientType
+      equals: "B"
+    set:
+      target: recipientDetail.type
+      value: "C"
+
+  - when:
+      path: $.recipientType
+      equals: "I"
+    set:
+      target: recipientDetail.type
+      value: "I"
+
+  - set:
+      target: senderDetail.type
+      value: "C"
+
+  # Account number type defaults
+  - when:
+      path: $.cdtrAcctIban
+      exists: true
+    set:
+      target: recipientDetail.bank.accountNumberType
+      value: "IBAN"
+
+  - when:
+      path: $.cdtrAcctIban
+      exists: false
+    set:
+      target: recipientDetail.bank.accountNumberType
+      value: "DEFAULT"
+
+  # Bank code type - USD uses ABA routing number
+  - when:
+      path: $.cdtrAgtClrSysMmbId
+      exists: true
+    set:
+      target: recipientDetail.bank.bankCodeType
+      value: "ABA"
+
+  - when:
+      path: $.cdtrAgtBic
+      exists: true
+    set:
+      target: recipientDetail.bank.bankCodeType
+      value: "DEFAULT"
+
+  # USD-specific defaults
+  - set:
+      target: recipientDetail.bank.currencyCode
+      value: "USD"
+
+  - set:
+      target: transactionDetail.settlementCurrencyCode
+      value: "USD"
+
+  # Business application defaults
+  - set:
+      target: transactionDetail.businessApplicationId
+      value: "FD"
+
+  - set:
+      target: transactionDetail.senderSourceOfFunds
+      value: "05"
+
+  - set:
+      target: transactionDetail.initiatingPartyId
+      value: 1002
+
+  # USD-specific funding model
+  - set:
+      target: transactionDetail.fundingModel
+      value: "PREFUNDED"

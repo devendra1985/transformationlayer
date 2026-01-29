@@ -1,0 +1,6 @@
+# Maps providers to their cartridge IDs
+providers:
+  VISA:
+    name: "Visa Direct"
+    cartridges:
+      - VISABA

@@ -1,0 +1,53 @@
+# ============================================================================
+# VISA VISABA USD - Route Definition
+# ============================================================================
+
+route:
+  id: VISABA-USD-route
+  from:
+    uri: "direct:VISABA-USD"
+    steps:
+      - bean:
+          ref: persistRaw
+          method: process
+      - bean:
+          ref: validate
+          method: process
+      - bean:
+          ref: enrich
+          method: process
+      - bean:
+          ref: transform
+          method: process
+      - bean:
+          ref: persistTransformed
+          method: process
+      - setHeader:
+          name: Content-Type
+          constant: application/json
+      # Uncomment below to call external VISA API
+      # - choice:
+      #     when:
+      #       - simple: "${header.X-Bulk-Request} == 'true'"
+      #         steps:
+      #           - setHeader:
+      #               name: Content-Type
+      #               constant: application/json
+      #     otherwise:
+      #       steps:
+      #         - marshal:
+      #             json: { }
+      #         - convertBodyTo:
+      #             type: java.lang.String
+      #         - setHeader:
+      #             name: CamelHttpMethod
+      #             constant: POST
+      #         - setHeader:
+      #             name: Content-Type
+      #             constant: application/json
+      #         - toD: "{{app.visa.base-url}}{{app.visa.path}}?bridgeEndpoint=true"
+      #         - unmarshal:
+      #             json: { }
+      #         - setHeader:
+      #             name: Content-Type
+      #             constant: application/json

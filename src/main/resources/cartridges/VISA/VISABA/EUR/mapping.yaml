@@ -1,0 +1,139 @@
+# ============================================================================
+# VISA VISABA EUR - Mapping & Validation Rules
+# ============================================================================
+
+cartridgeId: VISABA-EUR
+
+output:
+  type: json
+
+# Simplified validations for testing - can be made stricter later
+validations:
+  - path: $.transactionDetail.clientReferenceId
+    required: true
+
+mappings:
+  # Recipient detail
+  - source: $.cdtrNm
+    target: recipientDetail.name
+    required: true
+
+  - source: $.recipientType
+    target: recipientDetail.type
+    defaultValue: "I"
+
+  - source: $.cdtrPstlAdrCtry
+    target: recipientDetail.address.country
+    required: true
+
+  - source: $.cdtrPstlAdrTwnNm
+    target: recipientDetail.address.city
+
+  - source: $.cdtrPstlAdrPstCd
+    target: recipientDetail.address.postalCode
+
+  - source: $.cdtrPstlAdrStrtNm
+    target: recipientDetail.address.addressLine1
+
+  - source: $.cdtrPstlAdrBldgNb
+    target: recipientDetail.address.addressLine2
+
+  - source: $.cdtrAgtBic
+    target: recipientDetail.bank.bankCode
+
+  - source: $.cdtrAgtNm
+    target: recipientDetail.bank.bankName
+
+  # Use creditor name as account name
+  - source: $.cdtrNm
+    target: recipientDetail.bank.accountName
+    required: true
+
+  - source: $.cdtrAcctIban
+    target: recipientDetail.bank.accountNumber
+    required: true
+
+  - source: $.crAcctCcy
+    target: recipientDetail.bank.currencyCode
+    defaultValue: "EUR"
+
+  - source: $.cdtrPstlAdrCtry
+    target: recipientDetail.bank.countryCode
+    required: true
+
+  - source: $.cdtrAgtBic
+    target: recipientDetail.bank.BIC
+
+  - source: $.brnchCd
+    target: recipientDetail.bank.branchCode
+
+  # EUR-specific defaults
+  - source: $.accountNumberType
+    target: recipientDetail.bank.accountNumberType
+    defaultValue: "IBAN"
+
+  - source: $.bankCodeType
+    target: recipientDetail.bank.bankCodeType
+    defaultValue: "DEFAULT"
+
+  # Sender detail
+  - source: $.dbtrNm
+    target: senderDetail.name
+    required: true
+
+  - source: $.senderType
+    target: senderDetail.type
+    defaultValue: "C"
+
+  - source: $.dbtrAcctIban
+    target: senderDetail.senderAccountNumber
+    required: true
+
+  - source: $.dbtrPstlAdrCtry
+    target: senderDetail.address.country
+
+  - source: $.dbtrPstlAdrTwnNm
+    target: senderDetail.address.city
+
+  - source: $.dbtrPstlAdrStrtNm
+    target: senderDetail.address.addressLine1
+
+  - source: $.dbtrPstlAdrBldgNb
+    target: senderDetail.address.addressLine2
+
+  # Payout method
+  - source: $.payoutMethod
+    target: payoutMethod
+    defaultValue: "B"
+
+  # Transaction detail
+  - source: $.initiatingPartyId
+    target: transactionDetail.initiatingPartyId
+    defaultValue: "1002"
+
+  - source: $.paymentId
+    target: transactionDetail.clientReferenceId
+    required: true
+
+  - source: $.rmtInfUstrd.0
+    target: transactionDetail.statementNarrative
+
+  - source: $.crPymtAmt
+    target: transactionDetail.transactionAmount
+    required: true
+
+  - source: $.crPymtAmtCcy
+    target: transactionDetail.transactionCurrencyCode
+    required: true
+
+  - source: $.crAcctCcy
+    target: transactionDetail.settlementCurrencyCode
+    defaultValue: "EUR"
+
+  - source: $.businessApplicationId
+    target: transactionDetail.businessApplicationId
+    defaultValue: "FD"
+
+  - source: $.senderSourceOfFunds
+    target: transactionDetail.senderSourceOfFunds
+    defaultValue: "05"

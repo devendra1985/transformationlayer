@@ -1,47 +1,88 @@
 package com.example.transformation.cartridge;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Component;
-import org.yaml.snakeyaml.LoaderOptions;
-import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.constructor.Constructor;
 
+/**
+ * High-performance mapping definition loader with caching.
+ * 
+ * Performance optimizations:
+ * - Uses Jackson YAML (faster than SnakeYAML)
+ * - Single shared ObjectMapper (thread-safe)
+ * - ConcurrentHashMap cache with computeIfAbsent
+ * - Reads directly from InputStream (no String conversion)
+ */
 @Component
 public class MappingLoader {
-  private final ResourceLoader resourceLoader;
-  private final Yaml yaml;
-  private final ConcurrentMap<String, MappingDefinition> cache = new ConcurrentHashMap<>();
 
-  public MappingLoader(ResourceLoader resourceLoader) {
-    this.resourceLoader = resourceLoader;
-    LoaderOptions options = new LoaderOptions();
-    options.setAllowDuplicateKeys(false);
-    this.yaml = new Yaml(new Constructor(MappingDefinition.class, options));
-  }
+    // Shared ObjectMapper - thread-safe, reusable
+    private static final ObjectMapper YAML_MAPPER = new ObjectMapper(new YAMLFactory())
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+            .findAndRegisterModules();
 
-  public MappingDefinition load(String mappingResourcePath) {
-    return cache.computeIfAbsent(mappingResourcePath, this::readYaml);
-  }
+    private final ResourceLoader resourceLoader;
+    private final ConcurrentMap<String, MappingDefinition> cache = new ConcurrentHashMap<>(32);
 
-  private MappingDefinition readYaml(String mappingResourcePath) {
-    Resource resource = resourceLoader.getResource(mappingResourcePath);
-    if (!resource.exists()) {
-      throw new CartridgeException("Mapping YAML not found: " + mappingResourcePath);
+    public MappingLoader(ResourceLoader resourceLoader) {
+        this.resourceLoader = resourceLoader;
     }
-    try (InputStream is = resource.getInputStream()) {
-      MappingDefinition def = yaml.loadAs(new String(is.readAllBytes(), StandardCharsets.UTF_8), MappingDefinition.class);
-      if (def == null) {
-        throw new CartridgeException("Empty mapping YAML: " + mappingResourcePath);
-      }
-      return def;
-    } catch (Exception e) {
-      throw new CartridgeException("Failed to read mapping YAML: " + mappingResourcePath, e);
+
+    /**
+     * Loads mapping definition with O(1) cache lookup after first load.
+     */
+    public MappingDefinition load(String mappingResourcePath) {
+        return cache.computeIfAbsent(mappingResourcePath, this::readYaml);
     }
-  }
+
+    private MappingDefinition readYaml(String mappingResourcePath) {
+        Resource resource = resourceLoader.getResource(mappingResourcePath);
+        if (!resource.exists()) {
+            throw new CartridgeException(
+                    ErrorCodes.code(ErrorCodes.MAPPING_NOT_FOUND),
+                    CartridgeException.ErrorType.FUNCTIONAL,
+                    "Mapping YAML not found: " + mappingResourcePath,
+                    null, "VALIDATION");
+        }
+
+        try (InputStream is = resource.getInputStream()) {
+            MappingDefinition def = YAML_MAPPER.readValue(is, MappingDefinition.class);
+            if (def == null) {
+                throw new CartridgeException(
+                        ErrorCodes.code(ErrorCodes.MAPPING_EMPTY),
+                        CartridgeException.ErrorType.FUNCTIONAL,
+                        "Empty mapping YAML: " + mappingResourcePath,
+                        null, "VALIDATION");
+            }
+            return def;
+        } catch (CartridgeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new CartridgeException(
+                    ErrorCodes.code(ErrorCodes.MAPPING_READ_FAILED),
+                    CartridgeException.ErrorType.TECHNICAL,
+                    "Failed to read mapping YAML: " + mappingResourcePath,
+                    e, null, "VALIDATION");
+        }
+    }
+
+    /**
+     * Clears the cache. Useful for testing or hot-reload.
+     */
+    public void clearCache() {
+        cache.clear();
+    }
+
+    /**
+     * Returns cache size for monitoring.
+     */
+    public int cacheSize() {
+        return cache.size();
+    }
 }
-

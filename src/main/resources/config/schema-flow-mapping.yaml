@@ -1,0 +1,7 @@
+# Maps cartridgeId to transformation flows by direction
+cartridgeFlows:
+  VISABA:
+    outbound:
+      flowId: CJSON_TO_API
+    inbound:
+      flowId: API_TO_CJSON

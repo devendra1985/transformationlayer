@@ -1,6 +1,7 @@
 package com.example.transformation.enrich;
 
 import com.example.transformation.cartridge.CartridgeException;
+import com.example.transformation.cartridge.ErrorCodes;
 import com.example.transformation.cartridge.JsonPathMini;
 import java.lang.reflect.Method;
 import java.time.Instant;
@@ -50,7 +51,8 @@ public class EnrichmentEngine {
       } else if (rule.call != null) {
         applyCall(out, rule.call, appContext);
       } else {
-        throw new CartridgeException("Invalid enrichment rule: must contain 'set' or 'copy' or 'call'");
+        throw new CartridgeException(ErrorCodes.code(ErrorCodes.ENRICH_RULE_INVALID), CartridgeException.ErrorType.FUNCTIONAL,
+            "Invalid enrichment rule: must contain 'set' or 'copy' or 'call'", null, "ENRICHMENT");
       }
     }
 
@@ -60,10 +62,12 @@ public class EnrichmentEngine {
   @SuppressWarnings("unchecked")
   private void applyCall(Map<String, Object> body, EnrichmentConfig.Call call, ApplicationContext appContext) {
     if (appContext == null) {
-      throw new CartridgeException("Enrichment call requires ApplicationContext but it was null");
+      throw new CartridgeException(ErrorCodes.code(ErrorCodes.ENRICH_APP_CONTEXT_MISSING), CartridgeException.ErrorType.TECHNICAL,
+          "Enrichment call requires ApplicationContext but it was null", null, "ENRICHMENT");
     }
     if (call.bean == null || call.bean.isEmpty() || call.method == null || call.method.isEmpty()) {
-      throw new CartridgeException("Enrichment call must specify bean and method");
+      throw new CartridgeException(ErrorCodes.code(ErrorCodes.ENRICH_CALL_MISSING), CartridgeException.ErrorType.FUNCTIONAL,
+          "Enrichment call must specify bean and method", null, "ENRICHMENT");
     }
 
     Object bean = appContext.getBean(call.bean);
@@ -79,11 +83,13 @@ public class EnrichmentEngine {
         body.putAll((Map<String, Object>) m);
         return;
       }
-      throw new CartridgeException("Enrichment call returned non-Map but no target was provided");
+      throw new CartridgeException(ErrorCodes.code(ErrorCodes.ENRICH_CALL_NOT_MAP), CartridgeException.ErrorType.FUNCTIONAL,
+          "Enrichment call returned non-Map but no target was provided", null, "ENRICHMENT");
     } catch (CartridgeException e) {
       throw e;
     } catch (Exception e) {
-      throw new CartridgeException("Failed enrichment call: " + call.bean + "." + call.method + "(Map)", e);
+      throw new CartridgeException(ErrorCodes.code(ErrorCodes.ENRICH_CALL_FAILED), CartridgeException.ErrorType.TECHNICAL,
+          "Failed enrichment call: " + call.bean + "." + call.method + "(Map)", e, null, "ENRICHMENT");
     }
   }
 

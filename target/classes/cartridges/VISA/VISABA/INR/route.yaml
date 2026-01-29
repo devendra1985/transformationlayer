@@ -1,0 +1,27 @@
+# ============================================================================
+# VISA VISABA INR - Route Definition
+# ============================================================================
+
+route:
+  id: VISABA-INR-route
+  from:
+    uri: "direct:VISABA-INR"
+    steps:
+      - bean:
+          ref: persistRaw
+          method: process
+      - bean:
+          ref: validate
+          method: process
+      - bean:
+          ref: enrich
+          method: process
+      - bean:
+          ref: transform
+          method: process
+      - bean:
+          ref: persistTransformed
+          method: process
+      - setHeader:
+          name: Content-Type
+          constant: application/json

@@ -15,7 +15,7 @@
   <artifactId>transformation-service</artifactId>
   <version>0.0.1-SNAPSHOT</version>
   <name>transformation-service</name>
-  <description>Configurable transformation layer using Spring Boot + Apache Camel with pluggable cartridges</description>
+  <description>Configurable CJSON to API transformation layer using Spring Boot + Apache Camel</description>
 
   <properties>
     <java.version>17</java.version>
@@ -35,23 +35,42 @@
   </dependencyManagement>
 
   <dependencies>
+    <!-- Spring Boot -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter</artifactId>
     </dependency>
-
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-web</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-jdbc</artifactId>
+    </dependency>
 
-    <!-- Camel YAML DSL routes -->
+    <!-- JDBC - commented out, enable when database is configured
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-jdbc</artifactId>
+    </dependency>
+    -->
+
+    <!-- Observability -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-actuator</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.micrometer</groupId>
+      <artifactId>micrometer-registry-prometheus</artifactId>
+    </dependency>
+
+    <!-- Apache Camel -->
     <dependency>
       <groupId>org.apache.camel.springboot</groupId>
       <artifactId>camel-yaml-dsl-starter</artifactId>
     </dependency>
-
-    <!-- Core components used by cartridge routes -->
     <dependency>
       <groupId>org.apache.camel.springboot</groupId>
       <artifactId>camel-direct-starter</artifactId>
@@ -60,8 +79,6 @@
       <groupId>org.apache.camel.springboot</groupId>
       <artifactId>camel-bean-starter</artifactId>
     </dependency>
-
-    <!-- JSON + HTTP client -->
     <dependency>
       <groupId>org.apache.camel.springboot</groupId>
       <artifactId>camel-jackson-starter</artifactId>
@@ -71,17 +88,17 @@
       <artifactId>camel-http-starter</artifactId>
     </dependency>
 
-    <!-- XML serialization (for plug-and-play XML cartridges) -->
+    <!-- Jackson YAML for config parsing -->
     <dependency>
       <groupId>com.fasterxml.jackson.dataformat</groupId>
-      <artifactId>jackson-dataformat-xml</artifactId>
+      <artifactId>jackson-dataformat-yaml</artifactId>
     </dependency>
 
-    <!-- Mapping YAML parsing -->
+    <!-- JSON Schema validation -->
     <dependency>
-      <groupId>org.yaml</groupId>
-      <artifactId>snakeyaml</artifactId>
-      <version>2.2</version>
+      <groupId>com.networknt</groupId>
+      <artifactId>json-schema-validator</artifactId>
+      <version>1.5.4</version>
     </dependency>
 
     <!-- Tests -->
@@ -101,4 +118,3 @@
     </plugins>
   </build>
 </project>
-

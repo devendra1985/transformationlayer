@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Visa Send Payout Input (Draft)",
+  "type": "object",
+  "required": ["header", "paymentData"],
+  "properties": {
+    "header": {
+      "type": "object",
+      "required": ["msgTp", "correlationId"],
+      "properties": {
+        "msgTp": { "type": "string" },
+        "correlationId": { "type": "string" }
+      }
+    },
+    "paymentData": {
+      "type": "object",
+      "required": ["txInf"],
+      "properties": {
+        "grpHdr": { "type": "array", "items": { "type": "object" } },
+        "bulk": { "type": "array", "items": { "type": "object" } },
+        "txInf": { "type": "array", "items": { "type": "object" } }
+      }
+    }
+  }
+}

@@ -1,0 +1,67 @@
+# ============================================================================
+# VISA VISABA EUR - Enrichment Rules
+# ============================================================================
+
+cartridgeId: VISABA-EUR
+
+rules:
+  # Payout method constant (Visa Direct Account)
+  - set:
+      target: payoutMethod
+      value: "B"
+
+  # Sender/recipient type mapping
+  - when:
+      path: $.recipientType
+      equals: "B"
+    set:
+      target: recipientDetail.type
+      value: "C"
+
+  - when:
+      path: $.recipientType
+      equals: "I"
+    set:
+      target: recipientDetail.type
+      value: "I"
+
+  - set:
+      target: senderDetail.type
+      value: "C"
+
+  # EUR-specific: IBAN is standard for SEPA
+  - set:
+      target: recipientDetail.bank.accountNumberType
+      value: "IBAN"
+
+  # EUR-specific: Bank code type is BIC/SWIFT
+  - set:
+      target: recipientDetail.bank.bankCodeType
+      value: "DEFAULT"
+
+  # EUR-specific defaults
+  - set:
+      target: recipientDetail.bank.currencyCode
+      value: "EUR"
+
+  - set:
+      target: transactionDetail.settlementCurrencyCode
+      value: "EUR"
+
+  # Business application defaults
+  - set:
+      target: transactionDetail.businessApplicationId
+      value: "FD"
+
+  - set:
+      target: transactionDetail.senderSourceOfFunds
+      value: "05"
+
+  - set:
+      target: transactionDetail.initiatingPartyId
+      value: 1002
+
+  # EUR-specific: Payment rail for SEPA
+  - set:
+      target: transactionDetail.paymentRail
+      value: "SWIFT"
